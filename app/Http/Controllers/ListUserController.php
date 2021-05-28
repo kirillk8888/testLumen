@@ -25,9 +25,6 @@ class ListUserController extends Controller
         $users = User::with('cars','cars.user')->get();
         return response() ->json($users) ;
     }
-    public function showUser ($id) {
-        return response() ->json(User::find($id)) ;
-    }
     public function update ($id, Request $request) {
 
         $cars = Cars::where('user_id', $id)->first();

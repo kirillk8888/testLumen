@@ -22,10 +22,6 @@ class ListCarsController extends Controller
     public function showListCars () {
         return response() ->json(Cars::all()) ;
     }
-    public function showCars ($id) {
-        return response() ->json(Cars::find($id)) ;
-    }
-
     public function update ($id, Request $request) {
         $car =Cars::find($id)->toArray() ;
         $user = Cars::where('user_id', $request->get('user_id'))->first();
@@ -39,9 +35,5 @@ class ListCarsController extends Controller
         else {
             return response('auto tied to user', 404);
         }
-    }
-    public function delete ($id) {
-        Cars::findOrFail($id)->delete();
-        return response('Delete success', 200);
     }
 }
