@@ -29,8 +29,7 @@ class ListCarsController extends Controller
     public function update ($id, Request $request) {
         $car =Cars::find($id)->toArray() ;
         $user = Cars::where('user_id', $request->get('user_id'))->first();
-
-        if ($request->toArray()['status'] == 'confirm' || $request->get('status') == 'check' && empty($car['user_id']) && !in_array($car, $request->get('user_id'))) {
+        if ($request->toArray()['status'] == 'confirm' || $request->get('status') == 'check' && empty($car['user_id']) && !in_array( $request->get('user_id'), $car)) {
             $car = Cars::findOrFail($id);
             $car -> fill(['user_id' => $request->get('user_id')])->save();
             $user->fill(['user_id' => NULL]);
@@ -38,7 +37,7 @@ class ListCarsController extends Controller
             return response()-> json($car, 200);
         }
         else {
-            return response('auto tied to user', 200);
+            return response('auto tied to user', 404);
         }
     }
     public function delete ($id) {

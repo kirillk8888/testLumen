@@ -21,7 +21,6 @@ $router->group(['prefix' => 'api'], function ($router) {
     $router ->get('listCars/{id}', 'ListCarsController@showCars');
     $router ->get('listUser', 'ListUserController@showListUser');
     $router ->get('listUser/{id}', 'ListUserController@showUser');
-    $router ->post('listCars', 'ListCarsController@create');
     $router ->put('listUser/{id}', 'ListUserController@update');
     $router ->put('listCars/{id}', 'ListCarsController@update');
     $router ->delete('listCars/{id}', 'ListCarsController@delete');
