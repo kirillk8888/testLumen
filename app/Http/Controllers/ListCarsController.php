@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Cars;
+use App\Models\UsedCars;
 use Illuminate\Http\Request;
 
 class ListCarsController extends Controller
@@ -23,17 +24,55 @@ class ListCarsController extends Controller
         return response() ->json(Cars::all()) ;
     }
     public function update ($id, Request $request) {
-        $car =Cars::find($id)->toArray() ;
-        $user = Cars::where('user_id', $request->get('user_id'))->first();
-        if ($request->toArray()['status'] == 'confirm' || $request->get('status') == 'check' && empty($car['user_id']) && !in_array( $request->get('user_id'), $car)) {
+        //проверяем даты использования по таблице
+        $dateStart = $request->get('dateStart');
+        $dateEnd = $request->get('dateEnd');
+        $countUsedCar =  UsedCars::where('car_id', $id) -> where(function ($query) use ($dateStart, $dateEnd) {
+            $query->where(function ($q) use ($dateStart, $dateEnd) {
+                $q->where('dataStart', '>=', $dateStart)
+                    ->where('dataStart', '<', $dateEnd);
+
+            })->orWhere(function ($q) use ($dateStart, $dateEnd) {
+                $q->where('dataStart', '<=', $dateStart)
+                    ->where('dataEnd', '>', $dateEnd);
+
+            })->orWhere(function ($q) use ($dateStart, $dateEnd) {
+                $q->where('dataEnd', '>', $dateStart)
+                    ->where('dataEnd', '<=', $dateEnd);
+
+            })->orWhere(function ($q) use ($dateStart, $dateEnd) {
+                $q->where('dataStart', '>=', $dateStart)
+                    ->where('dataEnd', '<=', $dateEnd);
+            });
+
+        })->count();
+        //если не найдено полей в диапазоне дат:
+        if ($countUsedCar == 0) {
             $car = Cars::findOrFail($id);
-            $car -> fill(['user_id' => $request->get('user_id')])->save();
-            $user->fill(['user_id' => NULL]);
-            $user->save();
-            return response()-> json($car, 200);
+            if ($request->toArray()['status'] == 'confirm' || $request->get('status') == 'check' && empty($car['user_id']) && $car['user_id'] == NULL) {
+                //проверяем, привязан ли уже к авто юзер
+                $user = Cars::where('user_id', $request->get('user_id'))->first();
+                //если привязан, то вначале убираем привязку
+                if ($user) {
+                    $user->fill(['user_id' => NULL])->save();
+                }
+                //а затем привязываем авто к юзеру
+                $usedCars = new UsedCars;
+                $usedCars->fill(array(
+                    'dataStart'  => $dateStart,
+                    'dataEnd' => $dateEnd,
+                    'user_id'   => $request->get('user_id'),
+                    'car_id'   => $id
+                ))->save();
+                $car -> fill(['user_id' => $request->get('user_id')])->save();
+                return response()-> json($car, 200);
+            }
+            else {
+                return response('auto tied to user', 200); //если авто уже привязано к пользователю
+            }
         }
         else {
-            return response('auto tied to user', 404);
-        }
+            return response()-> json(['Error'=> 'Error date'], 200);
+        };
     }
 }
